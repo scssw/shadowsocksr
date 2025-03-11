@@ -23,6 +23,7 @@ import struct
 import logging
 import binascii
 import re
+import sys
 
 from shadowsocks import lru_cache
 
@@ -46,16 +47,26 @@ chr = compat_chr
 connect_log = logging.debug
 
 def to_bytes(s):
+    """将字符串转换为bytes类型"""
     if bytes != str:
-        if type(s) == str:
+        if isinstance(s, str):
             return s.encode('utf-8')
+        elif isinstance(s, bytes):
+            return s
+        else:
+            return str(s).encode('utf-8')
     return s
 
 
 def to_str(s):
+    """将bytes转换为字符串类型"""
     if bytes != str:
-        if type(s) == bytes:
+        if isinstance(s, bytes):
             return s.decode('utf-8')
+        elif isinstance(s, str):
+            return s
+        else:
+            return str(s)
     return s
 
 def int32(x):
