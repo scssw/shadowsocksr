@@ -1,21 +1,29 @@
-﻿#!/usr/bin/python
+#!/usr/bin/python
 # -*- coding: UTF-8 -*-
+
+import sys
 
 def load(name):
 	try:
-		obj = __import__(name)
-		reload(obj)
-		return obj
+		if sys.version_info[0] == 2:
+			import imp
+			return imp.load_source(name, name + '.py')
+		elif sys.version_info[0] == 3:
+			import importlib.util
+			spec = importlib.util.spec_from_file_location(name, name + '.py')
+			module = importlib.util.module_from_spec(spec)
+			spec.loader.exec_module(module)
+			return module
 	except:
 		pass
 
 	try:
 		import importlib
-		obj = importlib.__import__(name)
-		importlib.reload(obj)
-		return obj
+		return importlib.import_module(name)
 	except:
 		pass
+
+	return None
 
 def loads(namelist):
 	for name in namelist:
