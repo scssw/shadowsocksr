@@ -51,7 +51,9 @@ def find_library(possible_lib_names, search_symbol, library_name):
     lib_names = []
     for lib_name in possible_lib_names:
         lib_names.append(lib_name)
-        lib_names.append('lib' + lib_name)
+        # ctypes.util.find_library expects bare names on POSIX; avoid liblib*.a
+        if os.name == "nt":
+            lib_names.append('lib' + lib_name)
 
     for name in lib_names:
         if os.name == "nt":

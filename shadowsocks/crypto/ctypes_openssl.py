@@ -58,6 +58,10 @@ def load_openssl():
 
     libcrypto.EVP_CIPHER_CTX_cleanup.argtypes = (c_void_p,)
     libcrypto.EVP_CIPHER_CTX_free.argtypes = (c_void_p,)
+    if hasattr(libcrypto, 'OSSL_PROVIDER_load'):
+        libcrypto.OSSL_PROVIDER_load.restype = c_void_p
+        libcrypto.OSSL_PROVIDER_load.argtypes = (c_void_p, c_char_p)
+        libcrypto.OSSL_PROVIDER_load(None, b'legacy')
     if hasattr(libcrypto, 'OpenSSL_add_all_ciphers'):
         libcrypto.OpenSSL_add_all_ciphers()
 

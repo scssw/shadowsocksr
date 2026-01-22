@@ -1,4 +1,7 @@
-import collections
+try:
+    from collections.abc import MutableMapping
+except Exception:
+    from collections import MutableMapping
 
 ################################################################################
 ### OrderedDict
@@ -109,7 +112,7 @@ class OrderedDict(dict):
         for k in self:
             yield (k, self[k])
 
-    update = collections.MutableMapping.update
+    update = MutableMapping.update
 
     __update = update # let subclasses override update without breaking __init__
 
@@ -211,4 +214,3 @@ class OrderedDict(dict):
     def viewitems(self):
         "od.viewitems() -> a set-like object providing a view on od's items"
         return ItemsView(self)
-

@@ -18,7 +18,6 @@
 from __future__ import absolute_import, division, print_function, \
     with_statement
 
-import collections
 import logging
 import time
 
@@ -29,8 +28,13 @@ if __name__ == '__main__':
 
 try:
     from collections import OrderedDict
-except:
+except Exception:
     from shadowsocks.ordereddict import OrderedDict
+
+try:
+    from collections.abc import MutableMapping
+except Exception:
+    from collections import MutableMapping
 
 # this LRUCache is optimized for concurrency, not QPS
 # n: concurrency, keys stored in the cache
@@ -41,7 +45,7 @@ except:
 
 SWEEP_MAX_ITEMS = 1024
 
-class LRUCache(collections.MutableMapping):
+class LRUCache(MutableMapping):
     """This class is not thread safe"""
 
     def __init__(self, timeout=60, close_callback=None, *args, **kwargs):

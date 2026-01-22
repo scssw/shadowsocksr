@@ -58,6 +58,11 @@ def load_openssl():
     libcrypto.RAND_bytes.restype = c_int
     libcrypto.RAND_bytes.argtypes = (c_void_p, c_int)
 
+    if hasattr(libcrypto, 'OSSL_PROVIDER_load'):
+        libcrypto.OSSL_PROVIDER_load.restype = c_void_p
+        libcrypto.OSSL_PROVIDER_load.argtypes = (c_void_p, c_char_p)
+        libcrypto.OSSL_PROVIDER_load(None, b'legacy')
+
     if hasattr(libcrypto, 'OpenSSL_add_all_ciphers'):
         libcrypto.OpenSSL_add_all_ciphers()
 
