@@ -1,5 +1,7 @@
 #!/bin/bash
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "Error: python3 not found"
+    exit 1
+fi
 
-python_ver=$(ls /usr/bin|grep -e "^python[23]\.[1-9]\+$"|tail -1)
-eval $(ps -ef | grep "[0-9] ${python_ver} server\\.py m" | awk '{print "kill "$2}')
-
+eval $(ps -ef | grep "[0-9] python3 server\\.py m" | awk '{print "kill "$2}')
