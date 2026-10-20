@@ -100,7 +100,7 @@ class ServerPool(object):
 		if 'server' in self.config:
 			if port not in self.tcp_servers_pool:
 				return False
-		if 'server_ipv6' in self.config:
+		if self.config.get('server_ipv6'):
 			if port not in self.tcp_ipv6_servers_pool:
 				return False
 		return True
@@ -110,7 +110,7 @@ class ServerPool(object):
 		port = int(port)
 		ipv6_ok = False
 
-		if 'server_ipv6' in self.config:
+		if self.config.get('server_ipv6'):
 			if port in self.tcp_ipv6_servers_pool:
 				logging.info("server already at %s:%d" % (self.config['server_ipv6'], port))
 				return 'this port server is already running'
@@ -195,7 +195,7 @@ class ServerPool(object):
 			except Exception as e:
 				logging.warn(e)
 
-		if 'server_ipv6' in self.config:
+		if self.config.get('server_ipv6'):
 			if port not in self.tcp_ipv6_servers_pool:
 				logging.info("stopped server at [%s]:%d already stop" % (self.config['server_ipv6'], port))
 			else:

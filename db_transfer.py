@@ -265,6 +265,14 @@ class TransferBase(object):
 					trace = traceback.format_exc()
 					logging.error(trace)
 					#logging.warn('db thread except:%s' % e)
+				try:
+					import gc
+					gc.collect()
+					import ctypes
+					libc = ctypes.CDLL('libc.so.6')
+					libc.malloc_trim(0)
+				except Exception:
+					pass
 				if db_instance.event.wait(get_config().UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():
 					break
 		except KeyboardInterrupt as e:

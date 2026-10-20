@@ -123,13 +123,13 @@ class MuMgr(object):
                     ret += "    %s : %s" % (key, val)
                 elif val / 1024 ** 2 < 4:
                     val /= float(1024)
-                    ret += "    %s : %s  K Bytes" % (key, val)
+                    ret += "    %s : %.1f  K Bytes" % (key, val)
                 elif val / 1024 ** 3 < 4:
                     val /= float(1024 ** 2)
-                    ret += "    %s : %s  M Bytes" % (key, val)
+                    ret += "    %s : %.1f  M Bytes" % (key, val)
                 else:
                     val /= float(1024 ** 3)
-                    ret += "    %s : %s  G Bytes" % (key, val)
+                    ret += "    %s : %.1f  G Bytes" % (key, val)
             else:
                 ret += "    %s : %s" % (key, user[key])
         ret += "\n    " + self.ssrlink(user, False, muid)
