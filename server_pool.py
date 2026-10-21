@@ -48,7 +48,7 @@ class ServerPool(object):
 		shell.check_python()
 		self.config = shell.get_config(False)
 		self.dns_resolver = asyncdns.DNSResolver()
-		if not self.config.get('dns_ipv6', False):
+		if not self.config.get('server_ipv6') or not self.config.get('dns_ipv6', False):
 			asyncdns.IPV6_CONNECTION_SUPPORT = False
 
 		self.mgr = None #asyncmgr.ServerMgr()

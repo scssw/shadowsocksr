@@ -158,6 +158,7 @@ class EventLoop(object):
                             'package')
         self._fdmap = {}  # (f, handler)
         self._last_time = time.time()
+        self._last_gc_time = time.time()
         self._periodic_callbacks = []
         self._stopping = False
         logging.debug('using event model: %s', model)
@@ -226,6 +227,17 @@ class EventLoop(object):
                 for callback in self._periodic_callbacks:
                     callback()
                 self._last_time = now
+                if now - self._last_gc_time >= 60:
+                    self._last_gc_time = now
+                    try:
+                        import gc
+                        gc.collect()
+                        import ctypes
+                        libc = ctypes.CDLL(None)
+                        if hasattr(libc, 'malloc_trim'):
+                            libc.malloc_trim(0)
+                    except Exception:
+                        pass
             if events and not handle:
                 time.sleep(0.001)
 

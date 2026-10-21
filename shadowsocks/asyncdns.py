@@ -77,19 +77,21 @@ QTYPE_CNAME = 5
 QTYPE_NS = 2
 QCLASS_IN = 1
 
-def detect_ipv6_supprot():
-    if 'has_ipv6' in dir(socket):
+def detect_ipv6_support():
+    if not getattr(socket, 'has_ipv6', False):
+        return False
+    for test_addr in ('2001:4860:4860::8888', '2606:4700:4700::1111', '2620:fe::fe'):
         try:
             s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            s.connect(('::1', 0))
-            print('IPv6 support')
+            s.connect((test_addr, 53))
+            s.close()
             return True
-        except:
-            pass
-    print('IPv6 not support')
+        except Exception:
+            continue
     return False
 
-IPV6_CONNECTION_SUPPORT = detect_ipv6_supprot()
+detect_ipv6_supprot = detect_ipv6_support
+IPV6_CONNECTION_SUPPORT = detect_ipv6_support()
 
 def build_address(address):
     address = address.strip(b'.')
@@ -395,19 +397,14 @@ class DNSResolver(object):
                                 self._call_callback(hostname, None)
                                 break
             else:
-                if not ip and self._hostname_status.get(hostname, STATUS_IPV6) \
-                        == STATUS_IPV4:
-                    self._hostname_status[hostname] = STATUS_IPV6
-                    self._send_req(hostname, QTYPE_AAAA)
-                else:
-                    if ip:
-                        self._cache[hostname] = ip
-                        self._call_callback(hostname, ip)
-                    elif self._hostname_status.get(hostname, None) == STATUS_IPV6:
-                        for question in response.questions:
-                            if question[1] == QTYPE_AAAA:
-                                self._call_callback(hostname, None)
-                                break
+                if ip:
+                    self._cache[hostname] = ip
+                    self._call_callback(hostname, ip)
+                elif self._hostname_status.get(hostname, None) == STATUS_IPV4:
+                    for question in response.questions:
+                        if question[1] == QTYPE_A:
+                            self._call_callback(hostname, None)
+                            break
 
     def handle_event(self, sock, fd, event):
         if sock != self._sock:

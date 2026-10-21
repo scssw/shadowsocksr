@@ -1170,6 +1170,11 @@ class TCPRelayHandler(object):
             self._server.stat_add(self._client_address[0], -1)
         self._data_to_write_to_local = None
         self._data_to_write_to_remote = None
+        self._udp_data_send_buffer = None
+        self.speed_tester_u = None
+        self.speed_tester_d = None
+        self._dns_resolver = None
+        self._config = None
         self._server = None
         self._loop = None
         self._fd_to_handlers = None

@@ -227,7 +227,10 @@ class obfs_auth_chain_data(object):
         if user_id in self.user_id:
             local_client_id = self.user_id[user_id]
             if client_id in local_client_id:
-                local_client_id[client_id].delref()
+                queue = local_client_id[client_id]
+                queue.delref()
+                if queue.ref <= 0 and not queue.is_active():
+                    del local_client_id[client_id]
 
 class auth_chain_a(auth_base):
     def __init__(self, method):
@@ -632,7 +635,11 @@ class auth_chain_a(auth_base):
         return (out_buf, uid)
 
     def dispose(self):
-        self.server_info.data.remove(self.user_id, self.client_id)
+        if self.server_info and hasattr(self.server_info, 'data') and self.server_info.data:
+            self.server_info.data.remove(self.user_id, self.client_id)
+        self.recv_buf = b''
+        self.encryptor = None
+        self.server_info = None
 
 class auth_chain_b(auth_chain_a):
     def __init__(self, method):
