@@ -427,6 +427,8 @@ class TCPRelayHandler(object):
             if not addrs: # drop
                 return
             af, socktype, proto, canonname, sa = addrs[0]
+            if af == socket.AF_INET6 and not asyncdns.IPV6_CONNECTION_SUPPORT:
+                return
             if af == socket.AF_INET6:
                 self._remote_sock_v6.sendto(data, (server_addr, remote_addr[1]))
                 if self._udpv6_send_pack_id == 0:
@@ -705,6 +707,8 @@ class TCPRelayHandler(object):
         if len(addrs) == 0:
             raise Exception("getaddrinfo failed for %s:%d" % (ip, port))
         af, socktype, proto, canonname, sa = addrs[0]
+        if af == socket.AF_INET6 and not asyncdns.IPV6_CONNECTION_SUPPORT:
+            raise Exception("IPv6 not supported on this host, cannot connect to %s:%d" % (ip, port))
         if not self._remote_udp and not self._is_redirect:
             if self._forbidden_iplist:
                 if common.to_str(sa[0]) in self._forbidden_iplist:

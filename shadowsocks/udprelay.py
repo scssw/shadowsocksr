@@ -72,7 +72,7 @@ import binascii
 import traceback
 import threading
 
-from shadowsocks import encrypt, obfs, eventloop, lru_cache, common, shell
+from shadowsocks import encrypt, obfs, eventloop, lru_cache, common, shell, asyncdns
 from shadowsocks.common import pre_parse_header, parse_header, pack_addr
 
 # for each handler, we have 2 stream directions:
@@ -405,6 +405,9 @@ class UDPRelay(object):
             if not addrs: # drop
                 return
             af, socktype, proto, canonname, sa = addrs[0]
+            if af == socket.AF_INET6 and not asyncdns.IPV6_CONNECTION_SUPPORT:
+                logging.debug('IPv6 not supported, drop UDP packet to %s' % common.to_str(sa[0]))
+                return
             server_addr = sa[0]
             key = client_key(r_addr, af)
             client_pair = self._cache.get(key, None)
