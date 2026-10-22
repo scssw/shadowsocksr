@@ -726,14 +726,16 @@ class TCPRelayHandler(object):
         remote_sock = socket.socket(af, socktype, proto)
         self._remote_sock = remote_sock
         self._remote_sock_fd = remote_sock.fileno()
-        self._fd_to_handlers[self._remote_sock_fd] = self
+        if self._fd_to_handlers is not None:
+            self._fd_to_handlers[self._remote_sock_fd] = self
 
         if self._remote_udp:
             af, socktype, proto, canonname, sa = addrs_v6[0]
             remote_sock_v6 = socket.socket(af, socktype, proto)
             self._remote_sock_v6 = remote_sock_v6
             self._remotev6_sock_fd = remote_sock_v6.fileno()
-            self._fd_to_handlers[self._remotev6_sock_fd] = self
+            if self._fd_to_handlers is not None:
+                self._fd_to_handlers[self._remotev6_sock_fd] = self
 
         remote_sock.setblocking(False)
         if self._remote_udp:
@@ -749,6 +751,8 @@ class TCPRelayHandler(object):
         return remote_sock
 
     def _handle_dns_resolved(self, result, error):
+        if self._stage == STAGE_DESTROYED:
+            return
         if error:
             self._log_error(error)
             self.destroy()
@@ -1167,11 +1171,19 @@ class TCPRelayHandler(object):
             self._protocol.dispose()
             self._protocol = None
         self._encryptor = None
-        self._dns_resolver.remove_callback(self._handle_dns_resolved)
-        self._server.remove_handler(self)
-        if self._add_ref > 0:
-            self._server.add_connection(-1)
-            self._server.stat_add(self._client_address[0], -1)
+        if self._dns_resolver:
+            try:
+                self._dns_resolver.remove_callback(self._handle_dns_resolved)
+            except Exception as e:
+                shell.print_exception(e)
+        if self._server:
+            try:
+                self._server.remove_handler(self)
+                if self._add_ref > 0:
+                    self._server.add_connection(-1)
+                    self._server.stat_add(self._client_address[0], -1)
+            except Exception as e:
+                shell.print_exception(e)
         self._data_to_write_to_local = None
         self._data_to_write_to_remote = None
         self._udp_data_send_buffer = None

@@ -429,16 +429,23 @@ class DNSResolver(object):
         self._cache.sweep()
 
     def remove_callback(self, callback):
-        hostname = self._cb_to_hostname.get(callback)
+        hostname = self._cb_to_hostname.pop(callback, None)
         if hostname:
-            del self._cb_to_hostname[callback]
             arr = self._hostname_to_cb.get(hostname, None)
             if arr:
-                arr.remove(callback)
+                while callback in arr:
+                    arr.remove(callback)
                 if not arr:
-                    del self._hostname_to_cb[hostname]
-                    if hostname in self._hostname_status:
-                        del self._hostname_status[hostname]
+                    self._hostname_to_cb.pop(hostname, None)
+                    self._hostname_status.pop(hostname, None)
+        else:
+            for h, arr in list(self._hostname_to_cb.items()):
+                if callback in arr:
+                    while callback in arr:
+                        arr.remove(callback)
+                    if not arr:
+                        self._hostname_to_cb.pop(h, None)
+                        self._hostname_status.pop(h, None)
 
     def _send_req(self, hostname, qtype):
         req = build_request(hostname, qtype)
@@ -487,6 +494,7 @@ class DNSResolver(object):
                 self._cb_to_hostname[callback] = hostname
             else:
                 arr.append(callback)
+                self._cb_to_hostname[callback] = hostname
                 # TODO send again only if waited too long
                 if IPV6_CONNECTION_SUPPORT:
                     self._send_req(hostname, QTYPE_AAAA)

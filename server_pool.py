@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2014 clowwindy
@@ -74,18 +74,18 @@ class ServerPool(object):
 
 	@staticmethod
 	def _loop(loop, dns_resolver, mgr):
-		try:
-			if mgr is not None:
-				mgr.add_to_loop(loop)
-			dns_resolver.add_to_loop(loop)
-			loop.run()
-		except (KeyboardInterrupt, IOError, OSError) as e:
-			logging.error(e)
-			traceback.print_exc()
-			os.exit(0)
-		except Exception as e:
-			logging.error(e)
-			traceback.print_exc()
+		if mgr is not None:
+			mgr.add_to_loop(loop)
+		dns_resolver.add_to_loop(loop)
+		while not getattr(loop, '_stopping', False):
+			try:
+				loop.run()
+			except (KeyboardInterrupt, SystemExit):
+				os.exit(0)
+			except Exception as e:
+				logging.error("Exception in event loop: %s" % e)
+				traceback.print_exc()
+				time.sleep(0.5)
 
 	def server_is_run(self, port):
 		port = int(port)

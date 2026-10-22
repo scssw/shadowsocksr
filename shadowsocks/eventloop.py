@@ -222,10 +222,15 @@ class EventLoop(object):
                         handle = handler.handle_event(sock, fd, event) or handle
                     except (OSError, IOError) as e:
                         shell.print_exception(e)
+                    except Exception as e:
+                        shell.print_exception(e)
             now = time.time()
             if asap or now - self._last_time >= TIMEOUT_PRECISION:
                 for callback in self._periodic_callbacks:
-                    callback()
+                    try:
+                        callback()
+                    except Exception as e:
+                        shell.print_exception(e)
                 self._last_time = now
                 if now - self._last_gc_time >= 60:
                     self._last_gc_time = now
