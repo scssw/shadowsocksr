@@ -442,4 +442,10 @@ def remove_comment(json):
 
 def parse_json_in_str(data):
     # parse json and convert everything from unicode to str
-    return json.loads(data, object_hook=_decode_dict)
+    try:
+        return json.loads(data, object_hook=_decode_dict)
+    except ValueError:
+        import re
+        fixed = re.sub(r'([0-9]|true|false|null|"[^"\n]*")\s*\n\s*("[^"\n]*"\s*:)', r'\1,\n    \2', data)
+        fixed = re.sub(r',\s*([}\]])', r'\1', fixed)
+        return json.loads(fixed, object_hook=_decode_dict)
