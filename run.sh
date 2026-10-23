@@ -24,4 +24,8 @@ if [ -z "$LD_PRELOAD" ]; then
     fi
 fi
 export MALLOC_ARENA_MAX=2
-nohup python3 server.py m>> /dev/null 2>&1 &
+if [ ! -f "userapiconfig.py" ] && [ -f "apiconfig.py" ]; then
+    cp -f apiconfig.py userapiconfig.py
+fi
+
+nohup python3 server.py m >> /dev/null 2>&1 &

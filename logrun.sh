@@ -32,4 +32,8 @@ if [ -f "ssserver.log" ]; then
     fi
 fi
 
-nohup python3 server.py m>> ssserver.log 2>&1 &
+if [ ! -f "userapiconfig.py" ] && [ -f "apiconfig.py" ]; then
+    cp -f apiconfig.py userapiconfig.py
+fi
+
+nohup python3 server.py m >> ssserver.log 2>&1 &
