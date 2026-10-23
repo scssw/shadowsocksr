@@ -431,7 +431,8 @@ class auth_chain_a(auth_base):
 
             server_hash = hmac.new(mac_key, self.recv_buf[:length + 2], self.hashfunc).digest()
             if server_hash[:2] != self.recv_buf[length + 2 : length + 4]:
-                logging.info('%s: checksum error, data %s' % (self.no_compatible_method, binascii.hexlify(self.recv_buf[:length])))
+                if logging.getLogger().isEnabledFor(logging.INFO):
+                    logging.info('%s: checksum error, data %s' % (self.no_compatible_method, binascii.hexlify(self.recv_buf[:length])))
                 self.raw_trans = True
                 self.recv_buf = b''
                 raise Exception('client_post_decrypt data uncorrect checksum')
@@ -514,14 +515,16 @@ class auth_chain_a(auth_base):
             connection_id = struct.unpack('<I', head[8:12])[0]
             time_dif = common.int32(utc_time - (int(time.time()) & 0xffffffff))
             if time_dif < -self.max_time_dif or time_dif > self.max_time_dif:
-                logging.info('%s: wrong timestamp, time_dif %d, data %s' % (self.no_compatible_method, time_dif, binascii.hexlify(head)))
+                if logging.getLogger().isEnabledFor(logging.INFO):
+                    logging.info('%s: wrong timestamp, time_dif %d, data %s' % (self.no_compatible_method, time_dif, binascii.hexlify(head)))
                 return self.not_match_return(self.recv_buf)
             elif self.server_info.data.insert(self.user_id, client_id, connection_id):
                 self.has_recv_header = True
                 self.client_id = client_id
                 self.connection_id = connection_id
             else:
-                logging.info('%s: auth fail, data %s' % (self.no_compatible_method, binascii.hexlify(out_buf)))
+                if logging.getLogger().isEnabledFor(logging.INFO):
+                    logging.info('%s: auth fail, data %s' % (self.no_compatible_method, binascii.hexlify(out_buf)))
                 return self.not_match_return(self.recv_buf)
 
             self.encryptor = encrypt.Encryptor(to_bytes(base64.b64encode(self.user_key)) + to_bytes(base64.b64encode(self.last_client_hash)), 'rc4')
@@ -538,7 +541,8 @@ class auth_chain_a(auth_base):
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.recv_id == 0:
-                    logging.info(self.no_compatible_method + ': over size')
+                    if logging.getLogger().isEnabledFor(logging.INFO):
+                        logging.info(self.no_compatible_method + ': over size')
                     return (b'E'*2048, False)
                 else:
                     raise Exception('server_post_decrype data error')
@@ -548,7 +552,8 @@ class auth_chain_a(auth_base):
 
             client_hash = hmac.new(mac_key, self.recv_buf[:length + 2], self.hashfunc).digest()
             if client_hash[:2] != self.recv_buf[length + 2 : length + 4]:
-                logging.info('%s: checksum error, data %s' % (self.no_compatible_method, binascii.hexlify(self.recv_buf[:length])))
+                if logging.getLogger().isEnabledFor(logging.INFO):
+                    logging.info('%s: checksum error, data %s' % (self.no_compatible_method, binascii.hexlify(self.recv_buf[:length])))
                 self.raw_trans = True
                 self.recv_buf = b''
                 if self.recv_id == 0:
