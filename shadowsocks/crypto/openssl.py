@@ -130,6 +130,7 @@ class OpenSSLCrypto(object):
             else:
                 libcrypto.EVP_CIPHER_CTX_reset(self._ctx)
             libcrypto.EVP_CIPHER_CTX_free(self._ctx)
+            self._ctx = None
 
 
 ciphers = {

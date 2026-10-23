@@ -197,6 +197,12 @@ class obfs_auth_chain_data(object):
 
     def insert(self, user_id, client_id, connection_id):
         if user_id not in self.user_id:
+            if len(self.user_id) > 128:
+                for k in list(self.user_id.keys()):
+                    if len(self.user_id[k]) == 0 or not any(q.is_active() for q in self.user_id[k].values()):
+                        del self.user_id[k]
+                    if len(self.user_id) <= 64:
+                        break
             self.user_id[user_id] = lru_cache.LRUCache()
         local_client_id = self.user_id[user_id]
 
@@ -231,6 +237,8 @@ class obfs_auth_chain_data(object):
                 queue.delref()
                 if queue.ref <= 0 and not queue.is_active():
                     del local_client_id[client_id]
+            if len(local_client_id) == 0:
+                del self.user_id[user_id]
 
 class auth_chain_a(auth_base):
     def __init__(self, method):

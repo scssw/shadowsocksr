@@ -194,7 +194,7 @@ class TransferBase(object):
 		self.mu_ports = mu_servers
 
 	def clear_cache(self, port):
-		if port in self.force_update_transfer: del self.force_update_transfer[port]
+		self.force_update_transfer.discard(port)
 		if port in self.last_get_transfer: del self.last_get_transfer[port]
 		if port in self.last_update_transfer: del self.last_update_transfer[port]
 

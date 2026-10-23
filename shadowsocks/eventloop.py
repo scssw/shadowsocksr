@@ -185,7 +185,10 @@ class EventLoop(object):
         self._periodic_callbacks.append(callback)
 
     def remove_periodic(self, callback):
-        self._periodic_callbacks.remove(callback)
+        try:
+            self._periodic_callbacks.remove(callback)
+        except ValueError:
+            pass
 
     def modify(self, f, mode):
         fd = f.fileno()
@@ -226,13 +229,13 @@ class EventLoop(object):
                         shell.print_exception(e)
             now = time.time()
             if asap or now - self._last_time >= TIMEOUT_PRECISION:
-                for callback in self._periodic_callbacks:
+                for callback in list(self._periodic_callbacks):
                     try:
                         callback()
                     except Exception as e:
                         shell.print_exception(e)
                 self._last_time = now
-                if now - self._last_gc_time >= 60:
+                if now - self._last_gc_time >= 30:
                     self._last_gc_time = now
                     try:
                         import gc

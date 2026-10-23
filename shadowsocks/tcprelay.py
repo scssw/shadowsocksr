@@ -1132,8 +1132,8 @@ class TCPRelayHandler(object):
             except Exception as e:
                 shell.print_exception(e)
             try:
-                if self._remote_sock_fd is not None:
-                    del self._fd_to_handlers[self._remote_sock_fd]
+                if self._remote_sock_fd is not None and self._fd_to_handlers is not None:
+                    self._fd_to_handlers.pop(self._remote_sock_fd, None)
             except Exception as e:
                 shell.print_exception(e)
             self._remote_sock.close()
@@ -1145,8 +1145,8 @@ class TCPRelayHandler(object):
             except Exception as e:
                 shell.print_exception(e)
             try:
-                if self._remotev6_sock_fd is not None:
-                    del self._fd_to_handlers[self._remotev6_sock_fd]
+                if self._remotev6_sock_fd is not None and self._fd_to_handlers is not None:
+                    self._fd_to_handlers.pop(self._remotev6_sock_fd, None)
             except Exception as e:
                 shell.print_exception(e)
             self._remote_sock_v6.close()
@@ -1158,8 +1158,8 @@ class TCPRelayHandler(object):
             except Exception as e:
                 shell.print_exception(e)
             try:
-                if self._local_sock_fd is not None:
-                    del self._fd_to_handlers[self._local_sock_fd]
+                if self._local_sock_fd is not None and self._fd_to_handlers is not None:
+                    self._fd_to_handlers.pop(self._local_sock_fd, None)
             except Exception as e:
                 shell.print_exception(e)
             self._local_sock.close()
@@ -1482,12 +1482,18 @@ class TCPRelay(object):
     def handle_periodic(self):
         if self._closed:
             if self._server_socket:
-                self._eventloop.removefd(self._server_socket_fd)
+                if self._eventloop:
+                    self._eventloop.removefd(self._server_socket_fd)
                 self._server_socket.close()
                 self._server_socket = None
                 logging.info('closed TCP port %d', self._listen_port)
             for handler in list(self._fd_to_handlers.values()):
                 handler.destroy()
+            if hasattr(self, '_timeout_cache') and self._timeout_cache:
+                self._timeout_cache.clear(0)
+            if self._eventloop:
+                self._eventloop.remove_periodic(self.handle_periodic)
+            return
         self._sweep_timeout()
 
     def close(self, next_tick=False):
@@ -1497,6 +1503,10 @@ class TCPRelay(object):
             if self._eventloop:
                 self._eventloop.remove_periodic(self.handle_periodic)
                 self._eventloop.removefd(self._server_socket_fd)
-            self._server_socket.close()
+            if self._server_socket:
+                self._server_socket.close()
+                self._server_socket = None
             for handler in list(self._fd_to_handlers.values()):
                 handler.destroy()
+            if hasattr(self, '_timeout_cache') and self._timeout_cache:
+                self._timeout_cache.clear(0)

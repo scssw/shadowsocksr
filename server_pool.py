@@ -194,6 +194,7 @@ class ServerPool(object):
 				del self.udp_servers_pool[port]
 			except Exception as e:
 				logging.warn(e)
+		self.stat_counter.pop(port, None)
 
 		if self.config.get('server_ipv6'):
 			if port not in self.tcp_ipv6_servers_pool:

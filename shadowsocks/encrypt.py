@@ -68,6 +68,8 @@ def EVP_BytesToKey(password, key_len, iv_len):
     ms = b''.join(m)
     key = ms[:key_len]
     iv = ms[key_len:key_len + iv_len]
+    if len(cached_keys) > 1024:
+        cached_keys.clear()
     cached_keys[cached_key] = (key, iv)
     return key, iv
 

@@ -275,6 +275,7 @@ class DNSResolver(object):
         self._hostname_status = {}
         self._hostname_to_cb = {}
         self._cb_to_hostname = {}
+        self._hostname_to_time = {}
         self._cache = lru_cache.LRUCache(timeout=300)
         self._sock = None
         self._servers = None
@@ -358,19 +359,19 @@ class DNSResolver(object):
         loop.add_periodic(self.handle_periodic)
 
     def _call_callback(self, hostname, ip, error=None):
-        callbacks = self._hostname_to_cb.get(hostname, [])
+        self._hostname_to_time.pop(hostname, None)
+        callbacks = self._hostname_to_cb.pop(hostname, [])
+        self._hostname_status.pop(hostname, None)
         for callback in callbacks:
-            if callback in self._cb_to_hostname:
-                del self._cb_to_hostname[callback]
-            if ip or error:
-                callback((hostname, ip), error)
-            else:
-                callback((hostname, None),
-                         Exception('unable to parse hostname %s' % hostname))
-        if hostname in self._hostname_to_cb:
-            del self._hostname_to_cb[hostname]
-        if hostname in self._hostname_status:
-            del self._hostname_status[hostname]
+            self._cb_to_hostname.pop(callback, None)
+            try:
+                if ip or error:
+                    callback((hostname, ip), error)
+                else:
+                    callback((hostname, None),
+                             Exception('unable to parse hostname %s' % hostname))
+            except Exception as e:
+                shell.print_exception(e)
 
     def _handle_data(self, data):
         response = parse_response(data)
@@ -427,6 +428,10 @@ class DNSResolver(object):
 
     def handle_periodic(self):
         self._cache.sweep()
+        now = time.time()
+        for hostname, start_time in list(self._hostname_to_time.items()):
+            if now - start_time > 10:
+                self._call_callback(hostname, None, Exception('DNS query timeout'))
 
     def remove_callback(self, callback):
         hostname = self._cb_to_hostname.pop(callback, None)
@@ -446,6 +451,7 @@ class DNSResolver(object):
                     if not arr:
                         self._hostname_to_cb.pop(h, None)
                         self._hostname_status.pop(h, None)
+                        self._hostname_to_time.pop(h, None)
 
     def _send_req(self, hostname, qtype):
         req = build_request(hostname, qtype)
@@ -484,6 +490,7 @@ class DNSResolver(object):
                     return
             arr = self._hostname_to_cb.get(hostname, None)
             if not arr:
+                self._hostname_to_time[hostname] = time.time()
                 if IPV6_CONNECTION_SUPPORT:
                     self._hostname_status[hostname] = STATUS_IPV6
                     self._send_req(hostname, QTYPE_AAAA)
