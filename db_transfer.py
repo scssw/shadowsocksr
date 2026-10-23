@@ -1,4 +1,4 @@
-﻿#!/usr/bin/python
+#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
 import logging
@@ -269,8 +269,19 @@ class TransferBase(object):
 					import gc
 					gc.collect()
 					import ctypes
-					libc = ctypes.CDLL('libc.so.6')
-					libc.malloc_trim(0)
+					libc = ctypes.CDLL(None)
+					if hasattr(libc, 'malloc_trim'):
+						libc.malloc_trim(0)
+				except Exception:
+					pass
+				try:
+					import os
+					if os.path.isfile('ssserver.log') and os.path.getsize('ssserver.log') > 5 * 1024 * 1024:
+						with open('ssserver.log', 'rb') as lf:
+							lf.seek(-200 * 1024, os.SEEK_END)
+							lines = lf.readlines()
+						with open('ssserver.log', 'wb') as lf:
+							lf.writelines(lines[-1000:])
 				except Exception:
 					pass
 				if db_instance.event.wait(get_config().UPDATE_TIME) or not ServerPool.get_instance().thread.is_alive():

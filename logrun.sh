@@ -24,4 +24,12 @@ if [ -z "$LD_PRELOAD" ]; then
     fi
 fi
 export MALLOC_ARENA_MAX=2
+# 限制日志体积：超过 3MB 自动截取最后 2000 行，防止日志无休止膨胀导致磁盘 I/O 阻塞
+if [ -f "ssserver.log" ]; then
+    log_size=$(stat -c%s "ssserver.log" 2>/dev/null || stat -f%z "ssserver.log" 2>/dev/null || echo 0)
+    if [ "$log_size" -gt 3145728 ]; then
+        tail -n 2000 ssserver.log > ssserver.log.tmp 2>/dev/null && mv -f ssserver.log.tmp ssserver.log
+    fi
+fi
+
 nohup python3 server.py m>> ssserver.log 2>&1 &
