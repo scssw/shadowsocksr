@@ -4,4 +4,5 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
-eval $(ps -ef | grep "[0-9] python3 server\\.py m" | awk '{print "kill "$2}')
+pkill -f "server\.py m" 2>/dev/null || eval $(ps -ef | grep "[0-9] .*python.*server\.py m" | awk '{print "kill "$2}')
+sleep 0.5
