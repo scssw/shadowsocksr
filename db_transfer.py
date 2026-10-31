@@ -274,6 +274,35 @@ class TransferBase(object):
 						libc.malloc_trim(0)
 				except Exception:
 					pass
+
+				# 内存健康自愈看门狗：监控当前进程 RSS，防止内存泄漏或连接攻击导致 OOM-kill
+				try:
+					rss_mb = 0
+					if os.path.exists('/proc/self/status'):
+						with open('/proc/self/status', 'r') as f_status:
+							for line in f_status:
+								if line.startswith('VmRSS:'):
+									rss_mb = int(line.split()[1]) // 1024
+									break
+					if rss_mb > 1500:
+						import gc
+						gc.collect(2)
+						try:
+							import ctypes
+							libc = ctypes.CDLL(None)
+							if hasattr(libc, 'malloc_trim'):
+								libc.malloc_trim(0)
+						except Exception:
+							pass
+						pool = ServerPool.get_instance()
+						for p in list(pool.tcp_servers_pool.values()):
+							if hasattr(p, '_sweep_timeout'):
+								p._sweep_timeout()
+					if rss_mb > 3500:
+						logging.critical('[WATCHDOG] 进程 RSS 内存达到 %d MB (警戒上限 3500 MB)，执行优雅退出自拉起，彻底杜绝系统 OOM 杀死进程导致端口全部失效！', rss_mb)
+						os._exit(0)
+				except Exception as e:
+					logging.error('memory watchdog error: %s' % e)
 				try:
 					import os
 					if os.path.isfile('ssserver.log') and os.path.getsize('ssserver.log') > 5 * 1024 * 1024:

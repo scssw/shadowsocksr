@@ -233,6 +233,7 @@ class TCPRelayHandler(object):
         fd_to_handlers[self._local_sock_fd] = self
         loop.add(local_sock, eventloop.POLL_IN | eventloop.POLL_ERR, self._server)
         self._stage = STAGE_INIT
+        self._create_time = time.time()
 
     def __hash__(self):
         # default __hash__ is id / 16
@@ -1416,6 +1417,12 @@ class TCPRelay(object):
 
     def _sweep_timeout(self):
         self._timeout_cache.sweep()
+        # 快速清理未完成握手的半开连接/扫描探测/攻击请求（超过15秒未进入阶段者直接销毁，避免堆积占满内存）
+        now = time.time()
+        for handler in list(self._fd_to_handlers.values()):
+            if getattr(handler, '_stage', None) == STAGE_INIT:
+                if now - getattr(handler, '_create_time', now) > 15:
+                    handler.destroy()
 
     def _close_tcp_client(self, client):
         if client.remote_address:
@@ -1440,6 +1447,13 @@ class TCPRelay(object):
             try:
                 logging.debug('accept')
                 conn = self._server_socket.accept()
+                # 防连接洪泛保护：单端口并发保护上限（默认 256）
+                max_conns = self._config.get('max_connections_per_port', 256)
+                if self.server_connections >= max_conns:
+                    logging.warning('port %d reached max connections (%d), dropping incoming connection from %s:%d to prevent OOM',
+                                    self._listen_port, max_conns, conn[1][0], conn[1][1])
+                    conn[0].close()
+                    return handle
                 handler = TCPRelayHandler(self, self._fd_to_handlers,
                                 self._eventloop, conn[0], self._config,
                                 self._dns_resolver, self._is_local)
