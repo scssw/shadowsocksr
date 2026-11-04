@@ -85,7 +85,14 @@ def detect_ipv6_support():
         try:
             s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             s.connect((test_addr, 53))
+            sockname = s.getsockname()
             s.close()
+            if not sockname or not sockname[0]:
+                continue
+            src_ip = sockname[0].lower()
+            # Link-local (fe80::/10), loopback (::1), unspecified (::), or ULA (fc00::/7) without public route
+            if src_ip.startswith(('fe8', 'fe9', 'fea', 'feb', 'fc', 'fd', '::1', '::')) or src_ip.startswith('127.'):
+                continue
             return True
         except Exception:
             continue

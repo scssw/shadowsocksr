@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import os
 import logging
 import time
 import sys
@@ -304,7 +305,6 @@ class TransferBase(object):
 				except Exception as e:
 					logging.error('memory watchdog error: %s' % e)
 				try:
-					import os
 					if os.path.isfile('ssserver.log') and os.path.getsize('ssserver.log') > 5 * 1024 * 1024:
 						with open('ssserver.log', 'rb') as lf:
 							lf.seek(-200 * 1024, os.SEEK_END)
